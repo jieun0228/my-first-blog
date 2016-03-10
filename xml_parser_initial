@@ -1,0 +1,62 @@
+import urllib.request as ur
+import xmltodict
+import xml.etree.ElementTree as ET
+
+# Output path
+output_fn = 'C:\\Users\\6217473\\Desktop\\1603_PARSER\\parsing_nhtsa_xml.html'
+
+# Input values
+kwd = 'engine and noise'
+fmt = 'xml'
+rows = 2
+fl = ''
+
+# Encode search keywords
+def Keyword(kwd_tmp):    
+    kwds = ''
+    n = 1
+    for kwd in kwd_tmp.split(' '):
+        if (kwd not in ('and', 'or', 'not') and n < len(kwd_tmp.split(' '))):
+            kwd = 'cdescr:' + kwd + '%20'
+            kwds = kwds + kwd
+            n = n+1
+        elif kwd in ('and', 'or', 'not'):
+            kwds = kwds + kwd +'%20'
+            n = n+1
+        else:
+            kwd = 'cdescr:' + kwd 
+            kwds = kwds + kwd
+            n = n+1        
+    return kwds
+
+url = 'http://10.12.5.47:8983/solr/nhtsa/tvrh?q=%s&wt=%s&rows=%d&fl=%s' % (Keyword(kwd), fmt, rows, fl)
+
+res_tmp = ur.urlopen(url).read()
+#print(res_tmp)
+xml_data = xmltodict.parse(res_tmp)
+xml_tmp = xml_data['response']['result']['doc']
+
+keys=[]
+values=[]
+for doc in xml_tmp:
+    #print(doc)
+    #print(type(doc))
+    #print(len(doc))
+    print(len(doc['long']), len(doc['arr']), len(doc['str']))
+    for key in doc:
+        if key == 'long':
+            print(doc['long'])
+            keys.append(doc['long']['@name'])
+            values.append(doc['long']['#text'])
+            #print(doc['long'])
+        elif key == 'arr':
+            for i in doc['arr']:
+                print(i)
+                keys.append(i['@name'])
+                values.append(i['str'])
+        elif key == 'str':
+            for i in doc['str']:
+                print(i)
+                if len(i)>=2:
+                    keys.append(i['@name'])
+                    values.append(i['#text'])
